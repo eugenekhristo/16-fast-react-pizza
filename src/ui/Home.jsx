@@ -6,7 +6,7 @@ function Home() {
       <h1 className="mb-4 text-xl font-semibold md:text-4xl">
         The best pizza.
         <br />
-        <span className="text-[#fcb620]">
+        <span className="text-[#ff9500]">
           Straight out of the oven, straight to you.
         </span>
       </h1>
