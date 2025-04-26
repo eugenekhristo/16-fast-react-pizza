@@ -7,7 +7,7 @@ function Menu() {
   // console.log(menu);
 
   return (
-    <ul className="divide-y px-2">
+    <ul className="divide-y px-2 py-8">
       {menu.map((pizza) => (
         <MenuItem pizza={pizza} key={pizza.id} />
       ))}

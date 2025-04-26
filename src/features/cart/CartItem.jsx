@@ -1,8 +1,8 @@
-import Button from "../../ui/Button";
 import { formatCurrency } from "../../utils/helpers";
+import DeleteCartItem from "./DeleteCartItem";
 
 function CartItem({ item }) {
-  const { pizzaId, name, quantity, totalPrice } = item;
+  const { pizzaID, name, quantity, unitPrice } = item;
 
   return (
     <li className="py-4 sm:flex sm:items-center">
@@ -10,8 +10,8 @@ function CartItem({ item }) {
         {quantity}&times; {name}
       </p>
       <div className="flex items-center justify-between space-x-6">
-        <p className="font-semibold">{formatCurrency(totalPrice)}</p>
-        <Button type="small">delete</Button>
+        <p className="font-semibold">{formatCurrency(quantity * unitPrice)}</p>
+        <DeleteCartItem pizzaID={pizzaID} />
       </div>
     </li>
   );
