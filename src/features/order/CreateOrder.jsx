@@ -7,6 +7,7 @@ import { clearCart, getCart, getCartTotalPrice } from "../cart/cartSlise";
 import store from "../../store";
 import { formatCurrency } from "../../utils/helpers";
 import { fetchAddress } from "../user/userSlice";
+import EmptyCart from "../cart/EmptyCart";
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
@@ -20,20 +21,28 @@ function CreateOrder() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const errors = useActionData();
-  const username = useSelector((store) => store.user.username);
+  const {
+    username,
+    status: loadingAddressStatus,
+    position,
+    address,
+    error: errorAddress,
+  } = useSelector((store) => store.user);
   const dispatch = useDispatch();
 
   const totalPrice = useSelector(getCartTotalPrice);
   const priorityPrice = withPriority ? totalPrice * 0.2 : 0;
   const totalPriceWithPriority = totalPrice + priorityPrice;
 
+  const isLoadingAddress = loadingAddressStatus === "loading";
+
+  if (!cart.length) return <EmptyCart />;
+
   return (
     <div className="px-4 py-9">
       <h2 className="mb-7 text-xl font-semibold">
         Ready to order? Let&apos;s go!
       </h2>
-
-      <button onClick={() => dispatch(fetchAddress())}>Get my address</button>
 
       <Form method="POST">
         <div className="inputs mb-6 flex flex-col gap-4 md:mb-7 md:gap-6">
@@ -68,13 +77,31 @@ function CreateOrder() {
 
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
             <label className="inline-block md:basis-32">Address</label>
-            <div className="flex-1">
+            <div className="relative flex flex-1 flex-col gap-2">
               <input
                 type="text"
                 name="address"
                 required
                 className="input w-full"
+                disabled={isLoadingAddress}
+                defaultValue={address}
               />
+              {!position.latidude && !position.longitude && (
+                <span className="absolute right-[3px] top-[3px] md:right-[8px] md:top-[7px]">
+                  <Button
+                    type="small"
+                    onClick={() => dispatch(fetchAddress())}
+                    disabled={isLoadingAddress}
+                  >
+                    Get my address
+                  </Button>
+                </span>
+              )}
+              {loadingAddressStatus === "error" && (
+                <p className="rounded-md bg-red-100 px-4 py-2 text-xs font-medium text-red-500">
+                  {errorAddress}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -86,7 +113,10 @@ function CreateOrder() {
             id="priority"
             className="h-6 w-6 accent-yellow-400 focus:outline-none focus:ring focus:ring-yellow-400 focus:ring-offset-2"
             value={withPriority}
-            onChange={(e) => setWithPriority(e.target.checked)}
+            onChange={(e) => {
+              e.preventDefault();
+              setWithPriority(e.target.checked);
+            }}
           />
           <label
             htmlFor="priority"
@@ -98,7 +128,16 @@ function CreateOrder() {
 
         <div>
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
-          <Button type="primary" disabled={isSubmitting}>
+          <input
+            type="hidden"
+            name="position"
+            value={
+              position.latitude && position.longitude
+                ? `${position.longitude}, ${position.latitude}`
+                : ""
+            }
+          />
+          <Button type="primary" disabled={isSubmitting || isLoadingAddress}>
             {isSubmitting
               ? "Placing order..."
               : `Order now for ${formatCurrency(totalPriceWithPriority)}`}
@@ -127,9 +166,9 @@ export async function action({ request }) {
 
   if (Object.keys(errors).length > 0) return errors;
 
-  store.dispatch(clearCart());
-
   const newOrder = await createOrder(order);
+
+  store.dispatch(clearCart());
 
   return redirect(`/order/${newOrder.id}`);
 }
